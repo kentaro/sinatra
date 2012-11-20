@@ -324,7 +324,7 @@ module Sinatra
       def <<(data)
         Rack::Chunked::Body.new([data.to_s]).each do |chunk|
           @scheduler.schedule do
-            @front.call(data.to_s)
+            @front.call(chunk)
           end
         end
 
