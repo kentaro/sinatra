@@ -322,7 +322,12 @@ module Sinatra
       end
 
       def <<(data)
-        @scheduler.schedule { @front.call(data.to_s) }
+        Rack::Chunked::Body.new([data.to_s]).each do |chunk|
+          @scheduler.schedule do
+            @front.call(data.to_s)
+          end
+        end
+
         self
       end
 
@@ -341,6 +346,7 @@ module Sinatra
     # after the block has been executed. This is only relevant for evented
     # servers like Thin or Rainbows.
     def stream(keep_open = false)
+      headers['Transfer-Encoding'] = 'chunked'
       scheduler = env['async.callback'] ? EventMachine : Stream
       current   = @params.dup
       body Stream.new(scheduler, keep_open) { |out| with_params(current) { yield(out) } }
